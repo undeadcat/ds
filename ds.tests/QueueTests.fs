@@ -44,7 +44,7 @@ type QueueTests() =
             List.fold folder q nums|> ignore
             sw.Stop()
             printfn "%s %d %f" title iters (float sw.ElapsedTicks/float iters) 
-        let tests=[1000; 10000; 50000;]
+        let tests=[1000; 10000; 50000; 100000]
         let immutableTester = doTest (new Queue<int>()) (fun q i -> q.Enqueue i) (fun q-> q.Dequeue()|> snd ) "Immutable"
         let mutableTester = doTest (new System.Collections.Generic.Queue<int>(List.max tests)) 
                                 (fun q i -> q.Enqueue i;q;) 
