@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="QueueTests.fs" />
     <Compile Include="StreamTests.fs" />
-    <Compile Include="SegmentTree.fs" />
+    <Compile Include="HeapTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

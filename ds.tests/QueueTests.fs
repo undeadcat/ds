@@ -34,6 +34,7 @@ type QueueTests() =
 
       
     [<Test>]
+    [<Ignore>]
     member this.LoadTest() =
 
         let doTest q queuer dequeuer title iters  =

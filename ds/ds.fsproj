@@ -42,5 +42,7 @@
   <ItemGroup>
     <Compile Include="Stream.fs" />
     <Compile Include="Queue.fs" />
+    <Compile Include="SegmentTree.fs" />
+    <Compile Include="Heap.fs" />
   </ItemGroup>
 </Project>
