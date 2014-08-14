@@ -12,10 +12,10 @@ type Node<'T when 'T:equality> =
     
     member this.DebugDisplay with get() = this.ToString()
 
-    override this.ToString()=
+    override this.ToString() =
          sprintf "Value: %s Nodes: %d" (this.value.ToString()) (List.length this.nodes)
 
-type Heap<'T when 'T:equality> private (roots: Option<Node<'T>> list, comparer:'T -> 'T-> bool) =
+type Heap<'T when 'T:equality> private (roots: Option<Node<'T>> list, size:int, comparer:'T -> 'T-> bool) =
     static let decimalAdd first second adder defaultValue=
         let rec inner first second carry acc = 
             match (first, second) with
@@ -32,8 +32,8 @@ type Heap<'T when 'T:equality> private (roots: Option<Node<'T>> list, comparer:'
                                 inner fs ss totalCarry (totalRes::acc)
         inner (List.rev first) (List.rev second) defaultValue []
     
-    let newHeap roots = 
-          new Heap<'T>(roots, comparer)
+    let newHeap (roots, size) = 
+          new Heap<'T>(roots, size, comparer)
     
     static let mergeHeaps (thisRoots, secondRoots, comparer) = 
         let appendLeft node child = {nodes = child::node.nodes; value = node.value}
@@ -53,25 +53,27 @@ type Heap<'T when 'T:equality> private (roots: Option<Node<'T>> list, comparer:'
         match notEmpty with
             | []-> None
             | hd::tl -> Some(Seq.fold findMin hd tl)
-
+    
+    member this.Size : int = size
     member this.Roots : Option<Node<'T>> list = roots
     member this.Comparer = comparer
 
     member this.Merge (other:Heap<'T>) =
-        newHeap(mergeInternal other.Roots)
+        newHeap(mergeInternal other.Roots, size + other.Size)
 
     member this.Add value =
-        newHeap(mergeInternal [Some({nodes=[]; value=value})])
+        newHeap(mergeInternal [Some({nodes=[]; value=value})], size + 1)
     
-    member this.Head with get() = Option.bind (fun v -> Some(v.value)) (headNode())
-                                
+    member this.HeadNode = headNode()
+    member this.Head with get() = Option.bind (fun v -> Some(v.value)) this.HeadNode
+         
     member this.Dequeue() = 
-        match headNode() with 
+        match this.HeadNode with 
             | None -> (None, this)
             | Some({nodes = nodes; value = value}) as v -> 
                    let remaining = List.filter ((<>) v) this.Roots
                    let options = List.map (fun i -> Some(i)) nodes
-                   (Some(value), newHeap(mergeHeaps(options, remaining, comparer)))
+                   (Some(value), newHeap(mergeHeaps(options, remaining, comparer), size - 1))
 
     member this.Equals (otherHeap:Heap<'T>) =
         if this.Roots.Length <> otherHeap.Roots.Length then false
@@ -90,11 +92,13 @@ type Heap<'T when 'T:equality> private (roots: Option<Node<'T>> list, comparer:'
             |> List.fold (*) 397
      
     new (comparer) =
-       new Heap<'T>([], comparer)
+       new Heap<'T>([], 0, comparer)
 
  module Heap = 
     let Roots (heap:Heap<'T>) = 
         heap.Roots
+    let Size (heap:Heap<'T>) =
+        heap.Size
     let Add (heap:Heap<'T>) value = 
         heap.Add value
     let Dequeue (heap:Heap<'T>) = 

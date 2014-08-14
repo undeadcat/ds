@@ -63,4 +63,11 @@ type HeapTests() =
             Assert.That(dequeued, Is.EqualTo (Some(i)))
             heap <- result
         Assert.That (Heap.Dequeue heap |> fst, Is.EqualTo None)
-            
+     
+    [<Test>]
+    member this.Size()=
+        let heap = minHeap [1;2;3]
+        Assert.That(Heap.Size heap, Is.EqualTo 3)
+        Assert.That(Heap.Add heap 4|> Heap.Size, Is.EqualTo 4)
+        Assert.That(Heap.Dequeue heap |> snd |> Heap.Size, Is.EqualTo 2)
+        Assert.That(Heap.Merge (minHeap [5;6]) heap |> Heap.Size, Is.EqualTo 5)
