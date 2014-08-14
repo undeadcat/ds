@@ -8,7 +8,17 @@ open NUnit.Framework
 type HeapTests() = 
     let minHeap (vals:'T list) = Heap.OfList vals (<)
     let mergeRoots =  Common.uncurry Heap.Merge >> Heap.Roots
-    let Node (children, value) = Some({nodes = List.filter Option.isSome children |> List.map Option.get; value = value})
+    let Node (children, value) = Some(Node(List.filter Option.isSome children |> List.map Option.get,value))
+
+    let dump heap =
+        let rec inner (heap:Heap<'T>) acc = 
+            let returnThis() = (List.rev acc, heap)
+            match heap.Head with
+            |None -> returnThis() 
+            |_ -> match Heap.Dequeue heap with 
+                    |(None, heap) -> returnThis() 
+                    |(Some(deq), heap) -> inner heap (deq::acc) 
+        inner heap []
 
     [<Test>]
     member this.MergeEmpty() = 
@@ -56,16 +66,20 @@ type HeapTests() =
     [<Test>]
     member this.DequeueItems() =
         let vals = [10..-1..1]
-        let mutable heap = minHeap vals
-        for i in [1..10] do
-            Assert.That(Heap.Head heap, Is.EqualTo(Some(i)))
-            let (dequeued, result) = Heap.Dequeue heap
-            Assert.That(dequeued, Is.EqualTo (Some(i)))
-            heap <- result
-        Assert.That (Heap.Dequeue heap |> fst, Is.EqualTo None)
-     
+        let heap = minHeap vals
+        let (res, heap) = dump heap 
+        Assert.That (res, Is.EqualTo [1..10])
+        Assert.That (heap.Head, Is.EqualTo None)
+        Assert.That (heap.Dequeue() |> fst, Is.EqualTo (None))
+    
     [<Test>]
-    member this.Size()=
+    member this.SameItems() =
+        let vals = [1;1;1;1;2;2;2;2;3;3;3]
+        let heap = minHeap vals
+        Assert.That(fst (dump heap), Is.EqualTo vals)
+
+    [<Test>]
+    member this.Size() =
         let heap = minHeap [1;2;3]
         Assert.That(Heap.Size heap, Is.EqualTo 3)
         Assert.That(Heap.Add heap 4|> Heap.Size, Is.EqualTo 4)
