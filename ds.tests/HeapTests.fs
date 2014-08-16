@@ -1,7 +1,6 @@
 ﻿namespace ds.Tests
 
 open ds
-open System
 open NUnit.Framework
 
 [<TestFixture>]
