@@ -44,5 +44,6 @@
     <Compile Include="Queue.fs" />
     <Compile Include="SegmentTree.fs" />
     <Compile Include="Heap.fs" />
+    <Compile Include="Tree.fs" />
   </ItemGroup>
 </Project>
