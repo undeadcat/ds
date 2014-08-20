@@ -6,6 +6,22 @@ open System.Diagnostics
 [<DebuggerDisplay("{DebugDisplay}")>]
 module Common = 
     let uncurry f = fun (x, y) -> f x y
+    
+    let DecimalAdd first second adder defaultValue = 
+        let rec inner first second carry acc = 
+            match (first, second) with
+            | ([], []) -> List.rev(if carry = defaultValue then acc else carry :: acc)
+            | ([], x :: xs) -> 
+                let (carry, res) = adder x carry
+                if carry <> defaultValue then inner [] xs carry (res::acc)
+                else List.rev(res::acc) @ xs
+            | (v, []) -> inner [] v carry acc
+            | (f :: fs, s :: ss) -> 
+                let (carryRes, res) = adder f s
+                let (carry2, totalRes) = adder res carry
+                let (_, totalCarry) = adder carryRes carry2
+                inner fs ss totalCarry (totalRes :: acc)
+        inner first second defaultValue []
 
 type Node<'T when 'T : equality>(nodes : Node<'T> list, value : 'T) = 
     static let mutable maxId = 0
@@ -31,27 +47,6 @@ type Node<'T when 'T : equality>(nodes : Node<'T> list, value : 'T) =
         297 * this.value.GetHashCode() * (List.map (fun i -> i.GetHashCode()) nodes |> List.fold (*) 197)
 
 type Heap<'T when 'T : equality> private (roots : Option<Node<'T>> list, size : int, comparer : 'T -> 'T -> bool) = 
-    
-    static let decimalAdd first second adder defaultValue = 
-        let rec inner first second carry acc = 
-            match (first, second) with
-            | ([], []) -> 
-                if carry = defaultValue then acc
-                else (carry :: acc)
-            | ([], x :: xs) -> 
-                let (carry, res) = adder x carry
-                inner [] xs carry (res :: acc)
-            | (x :: xs, []) -> 
-                let (carry, res) = adder x carry
-                inner xs [] carry (res :: acc)
-            | (f :: fs, s :: ss) -> 
-                //TODO. this is shit.
-                let (carryRes, res) = adder f s
-                let (carry2, totalRes) = adder res carry
-                let (_, totalCarry) = adder carryRes carry2
-                inner fs ss totalCarry (totalRes :: acc)
-        inner (List.rev first) (List.rev second) defaultValue []
-    
     let newHeap (roots, size) = new Heap<'T>(roots, size, comparer)
     
     static let mergeHeaps (thisRoots, secondRoots, comparer) = 
@@ -64,7 +59,7 @@ type Heap<'T when 'T : equality> private (roots : Option<Node<'T>> list, size : 
             | (Some(one), Some(two)) -> 
                 (Some(if comparer one.value two.value then appendLeft one two
                       else appendLeft two one), None)
-        decimalAdd thisRoots secondRoots mergeTrees None
+        Common.DecimalAdd thisRoots secondRoots mergeTrees None
     
     let mergeInternal otherRoots = mergeHeaps (roots, otherRoots, comparer)
     
@@ -96,11 +91,7 @@ type Heap<'T when 'T : equality> private (roots : Option<Node<'T>> list, size : 
         match this.HeadNode with
         | None -> (None, this)
         | Some(v) -> 
-            let remaining = 
-                List.map (fun i -> 
-                    if compareNodes this.HeadNode i then None
-                    else i) this.Roots
-            
+            let remaining = List.map (fun i -> if compareNodes this.HeadNode i then None else i) this.Roots
             let options = List.map (fun i -> Some(i)) v.nodes
             (Some(v.value), newHeap (mergeHeaps (remaining, options, comparer), size - 1))
     

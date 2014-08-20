@@ -22,7 +22,7 @@ type StreamTests() =
         Assert.That(Stream.Concat s1 s2 |>Stream.ToList, Is.EqualTo(List.init 8 (fun i-> i+1)))
     
     [<Test>]
-    member this.ConcaEmpty() =
+    member this.ConcatEmpty() =
         Assert.That (testConcat [] [], Is.EqualTo [])
         Assert.That (testConcat [1] [], Is.EqualTo [1])
         Assert.That (testConcat [] [1], Is.EqualTo [1])
@@ -38,8 +38,3 @@ type StreamTests() =
         let res = Stream.Empty<int>() |> Stream.Reverse |> Stream.ToList
         Assert.That(res, Is.EqualTo [])
     
-    member this.Huj()=
-        let s1 = Stream.OfList [1;2;3;4]
-        let s2 = Stream.OfList [5;6]
-        let s3 = Stream.Concat s1 (Stream.Reverse s2)
-        Seq.empty<int>.Reverse() |> ignore

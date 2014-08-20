@@ -45,27 +45,27 @@ module Iz =
         let isBlack (node : RBNode<'T>) = 
             match node with
             | Leaf -> true
-            | Node(_, Black, _, _) -> true
+            | Node({ Color = Black }) -> true
             | _ -> false
         
         let getNodes (tree : RBTree<'T>) = 
             let rec inner node = 
                 match node with
                 | Leaf -> []
-                | Node(l, _, _, r) as node -> inner l @ [ node ] @ inner r
+                | Node({ Left = l; Right = r }) as node -> inner l @ [ node ] @ inner r
             inner tree.Root
         
         let getPaths (tree : RBTree<'T>) = 
             let rec inner node path = 
                 match node with
                 | Leaf -> [ path ]
-                | Node(l, _, _, r) as node -> inner l (node :: path) @ inner r (node :: path)
+                | Node({ Left = l; Right = r }) as node -> inner l (node :: path) @ inner r (node :: path)
             inner tree.Root []
         
         let childrenBlack = 
             function 
             | Leaf -> false
-            | Node(l, _, _, r) -> isBlack l && isBlack r
+            | Node({ Left = l; Right = r }) -> isBlack l && isBlack r
         
         let isRedBlack (tree : RBTree<'T>) = 
             Validator2((fun (x : RBTree<'T>) -> isBlack x.Root), "Root should be black") 

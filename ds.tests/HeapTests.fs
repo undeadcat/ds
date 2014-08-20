@@ -6,7 +6,7 @@ open NUnit.Framework
 [<TestFixture>]
 type HeapTests() = 
     let minHeap (vals:'T list) = Heap.OfList vals (<)
-    let mergeRoots =  Common.uncurry Heap.Merge >> Heap.Roots
+    let mergeRoots =  Common.uncurry Heap.Merge >> Heap.Roots >> List.rev
     let Node (children, value) = Some(Node(List.filter Option.isSome children |> List.map Option.get,value))
 
     let dump heap =
