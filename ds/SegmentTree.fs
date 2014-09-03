@@ -1,18 +1,18 @@
-﻿namespace ds.tests
+﻿namespace ds
 
 open System
 open System.Diagnostics
 
 [<DebuggerDisplay("{DebugDisplay}")>]
-type Node<'T> = 
-    | Node of Node<'T> * int * Node<'T> * int * 'T
+type STNode<'T> = 
+    | Node of STNode<'T> * int * STNode<'T> * int * 'T
     | Empty
     
     override this.ToString() = 
         let SimpleString = 
             function 
             | Empty -> "Empty"
-            | v -> "Node"
+            | _ -> "Node"
         match this with
         | Empty -> "Empty"
         | Node(left, leftLimit, right, rightLimit, value) -> 
@@ -21,24 +21,20 @@ type Node<'T> =
     
     member this.DebugDisplay = this.ToString()
 
-type SegmentTree<'T>(vals : 'T seq, f : 'T -> 'T -> 'T, defaultValue : 'T) = 
-    
-    let pairs ls = 
-        let rec inner rem acc = 
-            match rem with
-            | [] -> acc
-            | _ :: [] -> raise (new Exception "List must have an even number of elements")
-            | x :: y :: rest -> inner rest ((x, y) :: acc)
-        inner ls [] |> List.rev
-    
-    let BuildTree (vals : 'T []) f = 
+type SegmentTree<'T>(root : STNode<'T>, defaultValue : 'T, listFunction : 'T list -> 'T) = 
+    member __.ListFunction = listFunction
+    member __.DefaultValue = defaultValue
+    member __.Root = root
+
+module SegmentTree = 
+    let private BuildRoot (vals : 'T []) f = 
         let appendIfNeeded ls = 
             if (List.length ls) % 2 = 0 then ls
             else (Empty :: ls)
         
         let buildNode (l, r) = 
             match (l, r) with
-            | (Empty, Empty) -> raise (new Exception "Shouldn't build node with two empty children")
+            | (Empty, Empty) -> failwith "Dummy. This doesn't happen"
             | (Empty, Node(_, leftLimit, _, rightLimit, value)) -> Node(Empty, leftLimit, r, rightLimit, value)
             | (Node(_, leftLimit, _, rightLimit, value), Empty) -> Node(Empty, leftLimit, r, rightLimit, value)
             | (Node(_, leftLimit, _, _, leftValue), Node(_, _, _, rightLimit, rightValue)) -> 
@@ -46,21 +42,25 @@ type SegmentTree<'T>(vals : 'T seq, f : 'T -> 'T -> 'T, defaultValue : 'T) =
         
         let rec addLevel lower = 
             match lower with
+            | [] -> Empty
             | single :: [] -> single
             | v -> 
                 appendIfNeeded v
-                |> pairs
+                |> Common.Pairs
                 |> List.map buildNode
                 |> addLevel
         
-        let lowerLevel = Array.mapi (fun index item -> Node(Empty, index, Empty, index, item)) vals |> Array.toList
-        addLevel (appendIfNeeded lowerLevel)
+        Array.mapi (fun index item -> Node(Empty, index, Empty, index, item)) vals
+        |> Array.toList
+        |> appendIfNeeded
+        |> addLevel
     
-    let listFunc = List.fold f defaultValue
-    let root = BuildTree (Array.ofSeq vals) listFunc
+    let OfList values f defaultValue = 
+        let listFunction = (List.fold f defaultValue)
+        SegmentTree(BuildRoot (Array.ofSeq values) listFunction, defaultValue, listFunction)
     
-    let rec QueryNode tree ((lVal, rVal) as seg) = 
-        match tree with
+    let rec private QueryNode node ((lVal, rVal) as seg) = 
+        match node with
         | Empty -> []
         | Node(_, leftLimit, _, rightLimit, _) as node when lVal <= leftLimit && rVal >= rightLimit -> [ node ]
         | Node(left, _, right, _, _) -> 
@@ -72,9 +72,9 @@ type SegmentTree<'T>(vals : 'T seq, f : 'T -> 'T -> 'T, defaultValue : 'T) =
                 elif lVal >= rightLeftLimit then QueryNode right seg
                 else (QueryNode left (lVal, leftRightLimit)) @ (QueryNode right (rightLeftLimit, rVal))
     
-    member this.Query tree func seg = 
-        QueryNode tree seg
+    let Query (tree : SegmentTree<_>) seg = 
+        QueryNode (tree.Root) seg
         |> List.map (function 
-               | Empty -> defaultValue
+               | Empty -> tree.DefaultValue
                | Node(_, _, _, _, value) -> value)
-        |> func
+        |> tree.ListFunction

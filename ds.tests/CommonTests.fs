@@ -3,7 +3,6 @@
 open ds
 open NUnit.Framework
 open System
-open System.Diagnostics
 
 [<TestFixture>]
 type CommonTests() = 
@@ -40,13 +39,3 @@ type CommonTests() =
         let adder x y = Math.DivRem(x + y, 10)
         Common.DecimalAdd (ToList(a)) (ToList(b)) adder 0 |> OfList
     
-    [<Test>]
-    member this.Stupid() = 
-        let one = [ 1..100000 ]
-        let two = [ 1 ]
-        let mutable res = [ 0 ]
-        let sw = Stopwatch.StartNew()
-        for i in 0..1000 do
-            res <- two @ one
-        sw.Stop()
-        Console.WriteLine(sw.ElapsedMilliseconds)

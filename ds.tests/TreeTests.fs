@@ -31,12 +31,10 @@ type TreeTests() =
     
     [<Test>]
     member this.AccessByIndex() = 
-
-        
         let vals = [ 0..10 ]
         let tree = minTree vals
         
-        let sthg = List.map (Tree.ByIndex tree
+        let actual = List.map (Tree.ByIndex tree
                       >> Option.get
                       >> getValue) vals
-        Assert.That(sthg, Is.EqualTo vals)
+        Assert.That(actual, Is.EqualTo vals)

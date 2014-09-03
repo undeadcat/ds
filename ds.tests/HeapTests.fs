@@ -6,10 +6,17 @@ open NUnit.Framework
 [<TestFixture>]
 type HeapTests() = 
     let minHeap (vals:'T list) = Heap.OfList vals (<)
-    let mergeRoots =  Common.uncurry Heap.Merge >> Heap.Roots >> List.rev
+    let mergeRoots =  Common.Uncurry Heap.Merge >> Heap.Roots >> List.rev
     let Node (children, value) = Some(Node(List.filter Option.isSome children |> List.map Option.get,value))
 
-    let dump heap =
+    let compareTrees (one:Heap<'T>) (two : Heap<'T>) = 
+        if one.Roots.Length <> two.Roots.Length then false
+        else 
+            List.zip one.Roots two.Roots
+            |> List.map (Common.Uncurry (=))
+            |> List.fold (&&) true
+
+    let dequeueAll heap =
         let rec inner (heap:Heap<'T>) acc = 
             let returnThis() = (List.rev acc, heap)
             match heap.Head with
@@ -20,16 +27,16 @@ type HeapTests() =
         inner heap []
 
     [<Test>]
-    member this.MergeEmpty() = 
+    member __.MergeEmpty() = 
         let empty = minHeap []
         let one = minHeap [1]
-        Assert.That(empty.Merge empty, Is.EqualTo empty)
-        Assert.That(one.Merge empty, Is.EqualTo one)
-        Assert.That(one.Merge empty, Is.EqualTo one)
-        Assert.That(empty.Merge one, Is.EqualTo one)
+        Assert.True(compareTrees(empty.Merge empty) empty)
+        Assert.True(compareTrees(one.Merge empty) one)
+        Assert.True(compareTrees(one.Merge empty) one)
+        Assert.True(compareTrees(empty.Merge one) one)
 
     [<Test>]
-    member this.MergeSimple() = 
+    member __.MergeSimple() = 
         let one = minHeap [1]
         let two = minHeap [2]
         let expected = [Node([Node([], 2)],1); None]
@@ -37,14 +44,14 @@ type HeapTests() =
         Assert.That (actual, Is.EqualTo expected)
     
     [<Test>]
-    member this.Merge_AddAndCarry() = 
+    member __.Merge_AddAndCarry() = 
         let one = minHeap [1; 2; 3] //(1,2), (3)
         let two = minHeap [4; 5; 6] //(4,5), (6)
         let expected = [Node([Node([Node([],5)], 4); Node([], 2)],1); Node([Node([],6)],3); None] 
         Assert.That (mergeRoots (one, two), Is.EqualTo expected)
     
     [<Test>]
-    member this.Merge_UnequalLengths() =
+    member __.Merge_UnequalLengths() =
         let one = minHeap [1] //(1)
         let two = minHeap [2;3;4;] //(2,3), (4)
         //  1
@@ -54,7 +61,7 @@ type HeapTests() =
         Assert.That (mergeRoots(one, two), Is.EqualTo expected)
     
     [<Test>]
-    member this.AddItems_FindMin() = 
+    member __.AddItems_FindMin() = 
         let vals = [5;4;3;6;10;7;8;9;2;1]
         let heap = minHeap []
         Assert.That(heap.Head, Is.EqualTo None)
@@ -63,22 +70,22 @@ type HeapTests() =
         Assert.That(actual, Is.EqualTo [5;4;3;3;3;3;3;3;2;1])
     
     [<Test>]
-    member this.DequeueItems() =
+    member __.DequeueItems() =
         let vals = [10..-1..1]
         let heap = minHeap vals
-        let (res, heap) = dump heap 
+        let (res, heap) = dequeueAll heap 
         Assert.That (res, Is.EqualTo [1..10])
         Assert.That (heap.Head, Is.EqualTo None)
         Assert.That (heap.Dequeue() |> fst, Is.EqualTo (None))
     
     [<Test>]
-    member this.SameItems() =
+    member __.SameItems() =
         let vals = [1;1;1;1;2;2;2;2;3;3;3]
         let heap = minHeap vals
-        Assert.That(fst (dump heap), Is.EqualTo vals)
+        Assert.That(fst (dequeueAll heap), Is.EqualTo vals)
 
     [<Test>]
-    member this.Size() =
+    member __.Size() =
         let heap = minHeap [1;2;3]
         Assert.That(Heap.Size heap, Is.EqualTo 3)
         Assert.That(Heap.Add heap 4|> Heap.Size, Is.EqualTo 4)

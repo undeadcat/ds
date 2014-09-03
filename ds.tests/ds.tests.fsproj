@@ -35,11 +35,11 @@
   <ItemGroup>
     <Compile Include="CommonTests.fs" />
     <Compile Include="QueueTests.fs" />
-    <Compile Include="StreamTests.fs" />
     <Compile Include="HeapTests.fs" />
     <None Include="packages.config" />
     <Compile Include="Helpers.fs" />
     <Compile Include="TreeTests.fs" />
+    <Compile Include="SegmentTreeTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -50,9 +50,12 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ds\ds.fsproj">
-      <Project>{2946FBB9-DB87-435B-A9D1-1B981038806D}</Project>
       <Name>ds</Name>
+      <Project>{2946fbb9-db87-435b-a9d1-1b981038806d}</Project>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
 </Project>

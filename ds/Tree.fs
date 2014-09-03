@@ -95,7 +95,7 @@ module Tree =
                 Node({ Left = Leaf; Color = Red; Size = 1; Value = value; Right = Leaf })
             | Node({ Left = l; Color = c; Value = v; Right = r }) as node -> 
                 match tree.Comparer value v with
-                | EQ -> node //TODO. update dictionary keys.  
+                | EQ -> node
                 | LT -> balance ((inner l), c,  v, r)
                 | GT -> balance (l, c, v, (inner r))
         

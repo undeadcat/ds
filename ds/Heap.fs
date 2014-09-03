@@ -4,25 +4,6 @@ open System
 open System.Diagnostics
 
 [<DebuggerDisplay("{DebugDisplay}")>]
-module Common = 
-    let uncurry f = fun (x, y) -> f x y
-    
-    let DecimalAdd first second adder defaultValue = 
-        let rec inner first second carry acc = 
-            match (first, second) with
-            | ([], []) -> List.rev(if carry = defaultValue then acc else carry :: acc)
-            | ([], x :: xs) -> 
-                let (carry, res) = adder x carry
-                if carry <> defaultValue then inner [] xs carry (res::acc)
-                else List.rev(res::acc) @ xs
-            | (v, []) -> inner [] v carry acc
-            | (f :: fs, s :: ss) -> 
-                let (carryRes, res) = adder f s
-                let (carry2, totalRes) = adder res carry
-                let (_, totalCarry) = adder carryRes carry2
-                inner fs ss totalCarry (totalRes :: acc)
-        inner first second defaultValue []
-
 type Node<'T when 'T : equality>(nodes : Node<'T> list, value : 'T) = 
     static let mutable maxId = 0
     
@@ -84,30 +65,17 @@ type Heap<'T when 'T : equality> private (roots : Option<Node<'T>> list, size : 
     member this.Head = headNode
     
     member this.Dequeue() = 
-        let compareNodes (v : Node<'T> option) (v2 : Node<'T> option) = 
-            match (v, v2) with
-            | (Some(v), Some(v2)) -> v.Id = v2.Id
-            | _ -> false
+        let compare (toCompare : Node<'T> option) (node : Node<'T> option) = 
+            if Option.isSome node && Option.isSome toCompare && (Option.get toCompare).Id = (Option.get node).Id then 
+                None 
+            else node
         match this.HeadNode with
         | None -> (None, this)
         | Some(v) -> 
-            let remaining = List.map (fun i -> if compareNodes this.HeadNode i then None else i) this.Roots
+            let remaining = List.map (compare this.HeadNode) this.Roots
             let options = List.map (fun i -> Some(i)) v.nodes
-            (Some(v.value), newHeap (mergeHeaps (remaining, options, comparer), size - 1))
-    
-    member this.Equals(otherHeap : Heap<'T>) = 
-        if this.Roots.Length <> otherHeap.Roots.Length then false
-        else 
-            List.zip this.Roots otherHeap.Roots
-            |> List.map (Common.uncurry (=))
-            |> List.fold (&&) true
-    
-    override this.Equals(other : Object) = 
-        match other with
-        | :? Heap<'T> as otherHeap -> this.Equals otherHeap
-        | _ -> false
-    
-    override this.GetHashCode() : int = List.map (fun x -> x.GetHashCode()) this.Roots |> List.fold (*) 397
+            (Some(v.value), newHeap (mergeHeaps (remaining, options, this.Comparer), size - 1))
+  
     new(comparer) = new Heap<'T>([], 0, comparer)
 
 module Heap = 
